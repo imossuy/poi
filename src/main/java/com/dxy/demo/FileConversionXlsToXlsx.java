@@ -3,12 +3,14 @@ package com.dxy.demo;
 import org.apache.poi.hssf.model.InternalSheet;
 import org.apache.poi.hssf.record.AutoFilterInfoRecord;
 import org.apache.poi.hssf.record.ColumnInfoRecord;
+import org.apache.poi.hssf.record.NameRecord;
 import org.apache.poi.hssf.record.RecordBase;
 import org.apache.poi.hssf.record.aggregates.ColumnInfoRecordsAggregate;
 import org.apache.poi.hssf.usermodel.HSSFAnchor;
 import org.apache.poi.hssf.usermodel.HSSFCellStyle;
 import org.apache.poi.hssf.usermodel.HSSFClientAnchor;
 import org.apache.poi.hssf.usermodel.HSSFComment;
+import org.apache.poi.hssf.usermodel.HSSFEvaluationWorkbook;
 import org.apache.poi.hssf.usermodel.HSSFFont;
 import org.apache.poi.hssf.usermodel.HSSFPalette;
 import org.apache.poi.hssf.usermodel.HSSFPatriarch;
@@ -198,7 +200,7 @@ public class FileConversionXlsToXlsx {
                                     hssfShapeGroup.getY1(),
                                     hssfShapeGroup.getX2(),
                                     hssfShapeGroup.getY2());
-//                            int fillColor = hssfShapeGroup.getFillColor();
+                            int fillColor = hssfShapeGroup.getFillColor();
 //                            xssfShapeGroup.setFillColor(
 //                                    fillColor & 0x000000ff,
 //                                    (fillColor & 0x0000ff00) >> 8,
@@ -343,6 +345,9 @@ public class FileConversionXlsToXlsx {
 //        workbookOut.setSelectedTab();
 //        workbookOut.setSheetHidden(index,workbookIn.isSheetHidden(index));
 
+        HSSFEvaluationWorkbook hssfEvaluationWorkbook = HSSFEvaluationWorkbook.create((HSSFWorkbook) workbookIn);
+//        hssfEvaluationWorkbook.getNameXPtg(NameRecord.BUILTIN_FILTER_DB,null);
+
 
         workbookOut.setSheetVisibility(index,workbookIn.getSheetVisibility(index));
 
@@ -369,7 +374,12 @@ public class FileConversionXlsToXlsx {
                 }
             }else if(AutoFilterInfoRecord.class.isInstance(recordBase)){
                 AutoFilterInfoRecord autoFilterInfoRecord = (AutoFilterInfoRecord) recordBase;
-//                sheetOut.setAutoFilter();
+//                sheetOut.setAutoFilter(CellRangeAddress);
+//                sheetIn.setAutoFilter()
+
+            }else if(NameRecord.class.isInstance(recordBase)){
+                NameRecord nameRecord = (NameRecord) recordBase;
+//                nameRecord.
             }
 
         }
@@ -572,7 +582,9 @@ public class FileConversionXlsToXlsx {
                 break;
 
             case Cell.CELL_TYPE_FORMULA:
-//                cellOut.setCellFormula(cellIn.getCellFormula()); todo
+                if(cellIn.getCellFormula() != null){
+                    cellOut.setCellFormula(cellIn.getCellFormula());
+                }
                 break;
 
             case Cell.CELL_TYPE_NUMERIC:
