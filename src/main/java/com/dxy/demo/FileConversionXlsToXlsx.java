@@ -78,9 +78,9 @@ import static com.sun.org.apache.xml.internal.security.keys.keyresolver.KeyResol
 public class FileConversionXlsToXlsx {
 
     public static void main(String[] args) throws FileNotFoundException {
-        String baseDir = "/Users/dxy/Desktop/xls2xlsx/";
+        String baseDir = "/Users/imossuy/Desktop/xls2xlsx/";
 
-        String xlsFilePath = baseDir + "chart.xls";
+        String xlsFilePath = baseDir + "shape.xls";
         String xlsxFilePath = convertXls2Xlsx(xlsFilePath);
     }
 
@@ -200,7 +200,7 @@ public class FileConversionXlsToXlsx {
                                     hssfShapeGroup.getY1(),
                                     hssfShapeGroup.getX2(),
                                     hssfShapeGroup.getY2());
-                            int fillColor = hssfShapeGroup.getFillColor();
+//                            int fillColor = hssfShapeGroup.getFillColor();
 //                            xssfShapeGroup.setFillColor(
 //                                    fillColor & 0x000000ff,
 //                                    (fillColor & 0x0000ff00) >> 8,
@@ -248,6 +248,7 @@ public class FileConversionXlsToXlsx {
 //                            xssfSimpleShape.setLeftInset();
 //                            xssfSimpleShape.setRightInset();
                             xssfSimpleShape.setShapeType(5);
+
 
                             try {
 //                                String str = hssfSimpleShape.getString().getString();
@@ -582,9 +583,11 @@ public class FileConversionXlsToXlsx {
                 break;
 
             case Cell.CELL_TYPE_FORMULA:
-                if(cellIn.getCellFormula() != null){
-                    cellOut.setCellFormula(cellIn.getCellFormula());
-                }
+                    try {
+                        cellOut.setCellFormula(cellIn.getCellFormula());
+                    }catch (Exception e){
+                        e.printStackTrace();
+                    }
                 break;
 
             case Cell.CELL_TYPE_NUMERIC:
@@ -608,7 +611,7 @@ public class FileConversionXlsToXlsx {
             copyCellStyleProperties(styleIn,styleOut,sheetIn,sheetOut);
 //            styleOut.setAlignment(styleIn.getAlignment());
             DataFormat format = wbOut.createDataFormat();
-            styleOut.setDataFormat(format.getFormat(styleIn.getDataFormatString()));
+//            styleOut.setDataFormat(format.getFormat(styleIn.getDataFormatString()));
             HSSFColor forgroundColor = styleIn.getFillForegroundColorColor();
             if (forgroundColor != null) {
                 short[] foregroundColorValues = forgroundColor.getTriplet();
