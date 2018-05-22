@@ -6,6 +6,7 @@ import org.apache.poi.hssf.record.ColumnInfoRecord;
 import org.apache.poi.hssf.record.NameRecord;
 import org.apache.poi.hssf.record.RecordBase;
 import org.apache.poi.hssf.record.aggregates.ColumnInfoRecordsAggregate;
+import org.apache.poi.hssf.record.common.UnicodeString;
 import org.apache.poi.hssf.usermodel.HSSFAnchor;
 import org.apache.poi.hssf.usermodel.HSSFCellStyle;
 import org.apache.poi.hssf.usermodel.HSSFClientAnchor;
@@ -17,8 +18,10 @@ import org.apache.poi.hssf.usermodel.HSSFPatriarch;
 import org.apache.poi.hssf.usermodel.HSSFPicture;
 import org.apache.poi.hssf.usermodel.HSSFPictureData;
 import org.apache.poi.hssf.usermodel.HSSFPolygon;
+import org.apache.poi.hssf.usermodel.HSSFRichTextString;
 import org.apache.poi.hssf.usermodel.HSSFShape;
 import org.apache.poi.hssf.usermodel.HSSFShapeGroup;
+import org.apache.poi.hssf.usermodel.HSSFShapeTypes;
 import org.apache.poi.hssf.usermodel.HSSFSheet;
 import org.apache.poi.hssf.usermodel.HSSFSimpleShape;
 import org.apache.poi.hssf.usermodel.HSSFTextbox;
@@ -64,6 +67,7 @@ import java.io.OutputStream;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.text.Format;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -77,19 +81,22 @@ import static com.sun.org.apache.xml.internal.security.keys.keyresolver.KeyResol
  */
 public class FileConversionXlsToXlsx {
 
-    public static void main(String[] args) throws FileNotFoundException {
-        String baseDir = "/Users/imossuy/Desktop/xls2xlsx/";
+    static Workbook workbookIn = null;
+    static Workbook workbookOut = null;
 
-        String xlsFilePath = baseDir + "shape.xls";
+    public static void main(String[] args) throws FileNotFoundException {
+        String baseDir = "/Users/dxy/Desktop/xls2xlsx/";
+
+        String xlsFilePath = baseDir + "chart2.xls";
         String xlsxFilePath = convertXls2Xlsx(xlsFilePath);
     }
 
     private static String convertXls2Xlsx(String xlsFilePath) {
         Map cellStyleMap = new HashMap();
         String xlsxFilePath = null;
-        Workbook workbookIn = null;
+
         File xlsxFile = null;
-        Workbook workbookOut = null;
+
         OutputStream out = null;
         String xlsx = ".xlsx";
         try {
@@ -126,6 +133,12 @@ public class FileConversionXlsToXlsx {
                 }
 
                 if(drawingIn != null){
+
+                    if(drawingIn.containsChart()){
+//                        drawingOut.createChart();
+//                        drawingOut.getCharts()
+                    }
+
                     for (HSSFShape hssfShape : drawingIn) {
                         if(hssfShape instanceof HSSFPicture){
                             //图片
@@ -145,15 +158,19 @@ public class FileConversionXlsToXlsx {
                                     hssfPictureData.getData(),hssfPictureData.getFormat());
                             drawingOut.createPicture(xssfClientAnchor,pictureIndex);
 
+
                         }else if(hssfShape instanceof HSSFPolygon){
                             HSSFPolygon hssfPolygon = (HSSFPolygon) hssfShape;
-                            HSSFAnchor hssfAnchor = hssfPolygon.getAnchor();
+                            HSSFClientAnchor hssfAnchor = (HSSFClientAnchor) hssfPolygon.getAnchor();
                             XSSFClientAnchor xssfClientAnchor = drawingOut.createAnchor(
                                     hssfAnchor.getDx1(),
                                     hssfAnchor.getDy1(),
                                     hssfAnchor.getDx2(),
                                     hssfAnchor.getDy2(),
-                                    0,0,0,0);
+                                    hssfAnchor.getCol1(),
+                                    hssfAnchor.getRow1(),
+                                    hssfAnchor.getCol2(),
+                                    hssfAnchor.getRow2());
 
                             drawingOut.createSimpleShape(xssfClientAnchor);
                         }else if(hssfShape instanceof HSSFComment){
@@ -176,17 +193,17 @@ public class FileConversionXlsToXlsx {
 
                         }else if(hssfShape instanceof HSSFTextbox){
                             HSSFTextbox hssfTextbox = (HSSFTextbox) hssfShape;
-                            HSSFAnchor hssfAnchor = hssfTextbox.getAnchor();
+                            HSSFClientAnchor hssfAnchor = (HSSFClientAnchor) hssfTextbox.getAnchor();
 
                             XSSFClientAnchor xssfClientAnchor = drawingOut.createAnchor(
                                     hssfAnchor.getDx1(),
                                     hssfAnchor.getDy1(),
                                     hssfAnchor.getDx2(),
                                     hssfAnchor.getDy2(),
-                                    0,
-                                    0,
-                                    0,
-                                    0);
+                                    hssfAnchor.getCol1(),
+                                    hssfAnchor.getRow1(),
+                                    hssfAnchor.getCol2(),
+                                    hssfAnchor.getRow2());
 
                             XSSFTextBox xssfTextBox = drawingOut.createTextbox(xssfClientAnchor);
                             hssfTextbox2XssfTextbox(factory, hssfTextbox, xssfTextBox);
@@ -244,38 +261,74 @@ public class FileConversionXlsToXlsx {
                                             hssfAnchor.getRow1(),
                                             hssfAnchor.getCol2(),
                                             hssfAnchor.getRow2()));
-//                            xssfSimpleShape.setBottomInset(hssfSimpleShape.);
+//                            xssfSimpleShape.setBottomInset(hssfSimpleShape.get);
 //                            xssfSimpleShape.setLeftInset();
 //                            xssfSimpleShape.setRightInset();
-                            xssfSimpleShape.setShapeType(5);
+
+                            xssfSimpleShape.setShapeType(HssfShape2XssfShape.adapt(hssfSimpleShape.getShapeType()));
 
 
                             try {
-//                                String str = hssfSimpleShape.getString().getString();
-//                                xssfSimpleShape.setText((XSSFRichTextString) factory.createRichTextString(str));
+
+                                HSSFRichTextString hssfRichTextString = hssfSimpleShape.getString();
+                                String text = hssfRichTextString.getString();
+                                XSSFRichTextString xssfRichTextString = (XSSFRichTextString) factory.createRichTextString(text);
+
+                                UnicodeString unicodeString = getUnicodeString(hssfRichTextString);
+                                Iterator<UnicodeString.FormatRun> iterator = unicodeString.formatIterator();
+                                while (iterator.hasNext()){
+                                    UnicodeString.FormatRun formatRun = iterator.next();
+
+                                    HSSFFont hssfFont = (HSSFFont) workbookIn.getFontAt(formatRun.getFontIndex());
+
+                                    XSSFFont xssfFont = (XSSFFont) workbookOut.createFont();
+                                    xssfFont.setBold(hssfFont.getBold());
+                                    xssfFont.setFontHeightInPoints(hssfFont.getFontHeightInPoints());
+                                    xssfFont.setFontHeight(hssfFont.getFontHeight());
+                                    xssfFont.setFontName(hssfFont.getFontName());
+                                    xssfFont.setColor(hssfFont.getColor());
+                                    xssfFont.setItalic(hssfFont.getItalic());
+                                    xssfFont.setUnderline(hssfFont.getUnderline());
+                                    xssfFont.setCharSet(hssfFont.getCharSet());
+                                    xssfFont.setStrikeout(hssfFont.getStrikeout());
+                                    xssfFont.setTypeOffset(hssfFont.getTypeOffset());
+
+                                    //todo
+                                    xssfRichTextString.applyFont(xssfFont);
+
+                                }
+
+                                xssfSimpleShape.setText(xssfRichTextString);
                             }catch (Exception e){
                                 e.printStackTrace();
                             }
+
+                            if(hssfSimpleShape.isNoFill()){
+                                xssfSimpleShape.setNoFill(true);
+                            }else {
+                            int fillColor = hssfSimpleShape.getFillColor();
+                            xssfSimpleShape.setFillColor(
+                                    fillColor & 0x000000ff,
+                                    (fillColor & 0x0000ff00) >> 8,
+                                    (fillColor & 0x00ff0000) >> 16);
+
+                            }
+
 //                            xssfSimpleShape.setTextAutofit();
 //                            xssfSimpleShape.setTextDirection();
 //                            xssfSimpleShape.setTextHorizontalOverflow();
 //                            xssfSimpleShape.setTextVerticalOverflow();
-//                            xssfSimpleShape.setTopInset();˙
+//                            xssfSimpleShape.setTopInset(hssfSimpleShape.get);˙
 //                            xssfSimpleShape.setVerticalAlignment();
 //                            xssfSimpleShape.setWordWrap();
-//                            int fillColor = hssfSimpleShape.getFillColor();
-//                            xssfSimpleShape.setFillColor(
-//                                    fillColor & 0x000000ff,
-//                                    (fillColor & 0x0000ff00) >> 8,
-//                                    (fillColor & 0x00ff0000) >> 8);
+
 //                            xssfSimpleShape.setLineStyle(hssfSimpleShape.getLineStyle());
-//                            int lineStyleColor = hssfSimpleShape.getLineStyleColor();
-//                            xssfSimpleShape.setLineStyleColor(
-//                                    fillColor & 0x000000ff,
-//                                    (fillColor & 0x0000ff00) >> 8,
-//                                    (fillColor & 0x00ff0000) >> 8);
+                            int lineStyleColor = hssfSimpleShape.getLineStyleColor();
+                            xssfSimpleShape.setLineStyleColor(
+                                    lineStyleColor & 0x000000ff,
+                                    (lineStyleColor & 0x0000ff00) >> 8,
+                                    (lineStyleColor & 0x00ff0000) >> 16);
 //                            xssfSimpleShape.setLineWidth(hssfSimpleShape.getLineWidth());
-//                            xssfSimpleShape.setNoFill(hssfSimpleShape.isNoFill());
 
 
 
@@ -479,29 +532,90 @@ public class FileConversionXlsToXlsx {
         return null;
     }
 
+    private static UnicodeString getUnicodeString(HSSFRichTextString hssfRichTextString) {
+
+        try {
+            Method method = HSSFRichTextString.class.getDeclaredMethod("getUnicodeString");
+            method.setAccessible(true);
+            return (UnicodeString) method.invoke(hssfRichTextString);
+        } catch (NoSuchMethodException e) {
+//
+            e.printStackTrace();
+        } catch (IllegalAccessException e) {
+//
+            e.printStackTrace();
+        } catch (InvocationTargetException e) {
+//
+            e.printStackTrace();
+        }
+        return null;
+    }
+
     private static void hssfTextbox2XssfTextbox(CreationHelper factory, HSSFTextbox hssfTextbox, XSSFTextBox xssfTextBox) {
         xssfTextBox.setBottomInset(hssfTextbox.getMarginBottom());
-        int fillColor = hssfTextbox.getFillColor();
-//        xssfTextBox.setFillColor(
-//                fillColor & 0x000000ff,
-//                (fillColor & 0x0000ff00) >> 8,
-//                (fillColor & 0x00ff0000) >> 8);
-//        xssfTextBox.setLeftInset(hssfTextbox.getMarginLeft());
+
+        HSSFRichTextString hssfRichTextString = hssfTextbox.getString();
+        String text = hssfRichTextString.getString();
+        XSSFRichTextString xssfRichTextString = (XSSFRichTextString) factory.createRichTextString(text);
+
+        UnicodeString unicodeString = getUnicodeString(hssfRichTextString);
+        Iterator<UnicodeString.FormatRun> iterator = unicodeString.formatIterator();
+        while (iterator.hasNext()){
+            UnicodeString.FormatRun formatRun = iterator.next();
+
+            HSSFFont hssfFont = (HSSFFont) workbookIn.getFontAt(formatRun.getFontIndex());
+
+            XSSFFont xssfFont = (XSSFFont) workbookOut.createFont();
+            xssfFont.setBold(hssfFont.getBold());
+            xssfFont.setFontHeightInPoints(hssfFont.getFontHeightInPoints());
+            xssfFont.setFontHeight(hssfFont.getFontHeight());
+            xssfFont.setFontName(hssfFont.getFontName());
+            xssfFont.setColor(hssfFont.getColor());
+            xssfFont.setItalic(hssfFont.getItalic());
+            xssfFont.setUnderline(hssfFont.getUnderline());
+            xssfFont.setCharSet(hssfFont.getCharSet());
+//        xssfFont.setFamily(hssfFont);
+//        xssfFont.setScheme(hssfFont.);
+            xssfFont.setStrikeout(hssfFont.getStrikeout());
+//        xssfFont.setThemeColor(hssfFont.g);
+//        xssfFont.setThemesTable(hssfFont.get);
+            xssfFont.setTypeOffset(hssfFont.getTypeOffset());
+
+            //todo
+            xssfRichTextString.applyFont(xssfFont);
+
+        }
+
+        xssfTextBox.setText(xssfRichTextString);
+
+//        xssfTextBox.setNoFill(hssfTextbox.isNoFill());
+//        hssfTextbox.setFillColor();
+        if(hssfTextbox.isNoFill()){
+            xssfTextBox.setNoFill(true);
+        }else{
+            int fillColor = hssfTextbox.getFillColor();
+            xssfTextBox.setFillColor(
+                    fillColor & 0x000000ff,
+                    (fillColor & 0x0000ff00) >> 8,
+                    (fillColor & 0x00ff0000) >> 16);
+        }
+        xssfTextBox.setLeftInset(hssfTextbox.getMarginLeft());
 //        xssfTextBox.setLineStyle(hssfTextbox.getLineStyle());
-//        int lineStyleColor = hssfTextbox.getLineStyleColor();
-//        xssfTextBox.setLineStyleColor(
-//                lineStyleColor & 0x000000ff,
-//                (lineStyleColor & 0x0000ff00) >> 8,
-//                (lineStyleColor & 0x00ff0000) >> 8);
-        xssfTextBox.setLineWidth(hssfTextbox.getLineWidth());
-        xssfTextBox.setNoFill(hssfTextbox.isNoFill());
+        int lineStyleColor = hssfTextbox.getLineStyleColor();
+        xssfTextBox.setLineStyleColor(
+                lineStyleColor & 0x000000ff,
+                (lineStyleColor & 0x0000ff00) >> 8,
+                (lineStyleColor & 0x00ff0000) >> 16);
+//        xssfTextBox.setLineWidth(hssfTextbox.getLineWidth());
         xssfTextBox.setRightInset(hssfTextbox.getMarginRight());
-        xssfTextBox.setShapeType(202);
-        xssfTextBox.setText((XSSFRichTextString) factory.createRichTextString(hssfTextbox.getString().getString()));
-//                            xssfTextBox.setTextAutofit();
-//                            xssfTextBox.setTextDirection();
-//                            xssfTextBox.setTextHorizontalOverflow();
-//                            xssfTextBox.setTextVerticalOverflow();
+////        hssfTextbox.getShapeType()
+//
+//
+////        xssfTextBox.setShapeType();
+////                            xssfTextBox.setTextAutofit();
+////                            xssfTextBox.setTextDirection();
+////                            xssfTextBox.setTextHorizontalOverflow();
+////                            xssfTextBox.setTextVerticalOverflow();
         xssfTextBox.setTopInset(hssfTextbox.getMarginTop());
 //                            xssfTextBox.setVerticalAlignment();
 //                            xssfTextBox.setWordWrap();
