@@ -87,7 +87,7 @@ public class FileConversionXlsToXlsx {
     public static void main(String[] args) throws FileNotFoundException {
         String baseDir = "/Users/dxy/Desktop/xls2xlsx/";
 
-        String xlsFilePath = baseDir + "chart2.xls";
+        String xlsFilePath = baseDir + "size.xls";
         String xlsxFilePath = convertXls2Xlsx(xlsFilePath);
     }
 
@@ -98,7 +98,7 @@ public class FileConversionXlsToXlsx {
         File xlsxFile = null;
 
         OutputStream out = null;
-        String xlsx = ".xlsx";
+        String xlsx = "1.xlsx";
         try {
             InputStream inputStream = new FileInputStream(xlsFilePath);
             xlsxFilePath = xlsFilePath.substring(0, xlsFilePath.lastIndexOf('.')) + xlsx;
